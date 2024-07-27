@@ -1,21 +1,30 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Button, Form, Table } from 'react-bootstrap';
+import { useLocation } from './LocationContext';
 
 const InventoryManager = () => {
+  const { selectedLocation } = useLocation();
   const [locations, setLocations] = useState([]);
   const [staff, setStaff] = useState([]);
-  const [selectedLocation, setSelectedLocation] = useState('');
-  const [selectedStaff, setSelectedStaff] = useState('');
   const [ingredients, setIngredients] = useState([]);
+  const [selectedStaff, setSelectedStaff] = useState('');
   const [selectedIngredient, setSelectedIngredient] = useState('');
   const [quantity, setQuantity] = useState(0);
   const [inventory, setInventory] = useState([]);
+  const [locationName, setLocationName] = useState('');
 
   useEffect(() => {
     axios.get('http://localhost:5000/locations')
       .then(response => {
-        setLocations(response.data);
+        const sortedLocations = response.data.sort((a, b) => a.name.localeCompare(b.name));
+        setLocations(sortedLocations);
+        if (selectedLocation) {
+          const selectedLoc = sortedLocations.find(loc => loc.id === parseInt(selectedLocation));
+          if (selectedLoc) {
+            setLocationName(selectedLoc.name);
+          }
+        }
       })
       .catch(error => {
         console.error('There was an error fetching the locations!', error);
@@ -28,17 +37,9 @@ const InventoryManager = () => {
       .catch(error => {
         console.error('There was an error fetching the ingredients!', error);
       });
-  }, []);
 
-  useEffect(() => {
     if (selectedLocation) {
-      axios.get(`http://localhost:5000/inventory/${selectedLocation}`)
-        .then(response => {
-          setInventory(response.data);
-        })
-        .catch(error => {
-          console.error('There was an error fetching the inventory!', error);
-        });
+      fetchInventory(selectedLocation);
 
       axios.get(`http://localhost:5000/staff/${selectedLocation}`)
         .then(response => {
@@ -48,10 +49,21 @@ const InventoryManager = () => {
         .catch(error => {
           console.error('There was an error fetching the staff!', error);
         });
-    } else {
-      setStaff([]);
     }
   }, [selectedLocation]);
+
+  const fetchInventory = (locationId) => {
+    axios.get(`http://localhost:5000/inventory/${locationId}`)
+      .then(response => {
+        const sortedInventory = response.data
+          .filter(item => item.quantity > 0)
+          .sort((a, b) => a.ingredient_name.localeCompare(b.ingredient_name));
+        setInventory(sortedInventory);
+      })
+      .catch(error => {
+        console.error('There was an error fetching the inventory!', error);
+      });
+  };
 
   const handleAddInventory = () => {
     axios.post('http://localhost:5000/deliveries', {
@@ -63,14 +75,7 @@ const InventoryManager = () => {
       .then(response => {
         console.log('Inventory added:', response.data);
         setQuantity(0);
-        // Refresh inventory list
-        axios.get(`http://localhost:5000/inventory/${selectedLocation}`)
-          .then(response => {
-            setInventory(response.data);
-          })
-          .catch(error => {
-            console.error('There was an error fetching the inventory!', error);
-          });
+        fetchInventory(selectedLocation);
       })
       .catch(error => {
         console.error('Error adding inventory:', error);
@@ -79,16 +84,8 @@ const InventoryManager = () => {
 
   return (
     <div>
+      <h1>{locationName}</h1>
       <Form>
-        <Form.Group controlId="locationSelect">
-          <Form.Label>Select Location</Form.Label>
-          <Form.Control as="select" value={selectedLocation} onChange={e => setSelectedLocation(e.target.value)}>
-            <option value="">Select a location</option>
-            {locations.sort((a, b) => a.name.localeCompare(b.name)).map(location => (
-              <option key={location.id} value={location.id}>{location.name}</option>
-            ))}
-          </Form.Control>
-        </Form.Group>
         <Form.Group controlId="staffSelect">
           <Form.Label>Select Staff</Form.Label>
           <Form.Control as="select" value={selectedStaff} onChange={e => setSelectedStaff(e.target.value)}>
@@ -130,7 +127,7 @@ const InventoryManager = () => {
           </tr>
         </thead>
         <tbody>
-          {inventory.filter(item => item.quantity > 0).map(item => (
+          {inventory.map(item => (
             <tr key={item.ingredient_id}>
               <td>{item.ingredient_name}</td>
               <td>{item.quantity}</td>

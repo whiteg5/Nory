@@ -1,25 +1,34 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
+import { useLocation } from './LocationContext';
 
 const FrontOfHouseSales = () => {
+  const { selectedLocation } = useLocation();
   const [locations, setLocations] = useState([]);
   const [recipes, setRecipes] = useState([]);
-  const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [locationName, setLocationName] = useState('');
 
   useEffect(() => {
     axios.get('http://localhost:5000/locations')
       .then(response => {
-        setLocations(response.data.sort((a, b) => a.name.localeCompare(b.name)));
+        const sortedLocations = response.data.sort((a, b) => a.name.localeCompare(b.name));
+        setLocations(sortedLocations);
+        if (selectedLocation) {
+          const selectedLoc = sortedLocations.find(loc => loc.id === parseInt(selectedLocation));
+          if (selectedLoc) {
+            setLocationName(selectedLoc.name);
+          }
+        }
       })
       .catch(error => {
         console.error('There was an error fetching the locations!', error);
       });
-  }, []);
+  }, [selectedLocation]);
 
   useEffect(() => {
     if (selectedLocation) {
@@ -48,10 +57,10 @@ const FrontOfHouseSales = () => {
         setSuccess('Order placed successfully!');
         setQuantity(1); // Reset quantity to 1 after successful order
 
-        // Hide success message after 3 seconds
+        // Hide success message after 4 seconds
         setTimeout(() => {
           setSuccess(null);
-        }, 3000);
+        }, 4000);
       })
       .catch(error => {
         if (error.response && error.response.data && error.response.data.insufficient_ingredients) {
@@ -69,16 +78,8 @@ const FrontOfHouseSales = () => {
 
   return (
     <div>
+      <h1>{locationName}</h1>
       <Form>
-        <Form.Group controlId="locationSelect">
-          <Form.Label>Select Location</Form.Label>
-          <Form.Control as="select" value={selectedLocation} onChange={e => setSelectedLocation(e.target.value)}>
-            <option value="">Select a location</option>
-            {locations.map(location => (
-              <option key={location.id} value={location.id}>{location.name}</option>
-            ))}
-          </Form.Control>
-        </Form.Group>
         <Form.Group controlId="recipeSelect">
           <Form.Label>Select Menu Item</Form.Label>
           <Form.Control as="select" value={selectedRecipe} onChange={e => setSelectedRecipe(e.target.value)}>
