@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import axios from 'axios';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const LocationContext = createContext();
 
@@ -7,10 +8,21 @@ export const useLocation = () => {
 };
 
 export const LocationProvider = ({ children }) => {
+  const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState('');
 
+  useEffect(() => {
+    axios.get('http://localhost:5000/locations')
+      .then(response => {
+        setLocations(response.data);
+      })
+      .catch(error => {
+        console.error('There was an error fetching the locations!', error);
+      });
+  }, []);
+
   return (
-    <LocationContext.Provider value={{ selectedLocation, setSelectedLocation }}>
+    <LocationContext.Provider value={{ locations, selectedLocation, setSelectedLocation }}>
       {children}
     </LocationContext.Provider>
   );

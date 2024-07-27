@@ -5,7 +5,6 @@ import { useLocation } from './LocationContext';
 
 const FrontOfHouseSales = () => {
   const { selectedLocation } = useLocation();
-  const [locations, setLocations] = useState([]);
   const [recipes, setRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -17,7 +16,6 @@ const FrontOfHouseSales = () => {
     axios.get('http://localhost:5000/locations')
       .then(response => {
         const sortedLocations = response.data.sort((a, b) => a.name.localeCompare(b.name));
-        setLocations(sortedLocations);
         if (selectedLocation) {
           const selectedLoc = sortedLocations.find(loc => loc.id === parseInt(selectedLocation));
           if (selectedLoc) {
@@ -57,10 +55,10 @@ const FrontOfHouseSales = () => {
         setSuccess('Order placed successfully!');
         setQuantity(1); // Reset quantity to 1 after successful order
 
-        // Hide success message after 4 seconds
+        // Hide success message after 3 seconds
         setTimeout(() => {
           setSuccess(null);
-        }, 4000);
+        }, 3000);
       })
       .catch(error => {
         if (error.response && error.response.data && error.response.data.insufficient_ingredients) {

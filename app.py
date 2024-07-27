@@ -1,12 +1,14 @@
 import logging
-
-# Create logger
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+from datetime import datetime
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import and_, func
+
+# Create logger
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///nory.db"
@@ -80,6 +82,24 @@ class StaffLocation(db.Model):
     location_id = db.Column(db.Integer, db.ForeignKey("location.id"), primary_key=True)
 
 
+class Delivery(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    location_id = db.Column(db.Integer, db.ForeignKey("location.id"), nullable=False)
+    ingredient_id = db.Column(db.Integer, db.ForeignKey("ingredient.id"), nullable=False)
+    quantity = db.Column(db.Float, nullable=False)
+    staff_id = db.Column(db.Integer, db.ForeignKey("staff.staff_id"), nullable=False)
+    date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+
+
+class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    recipe_id = db.Column(db.Integer, db.ForeignKey("recipe.id"), nullable=False)
+    location_id = db.Column(db.Integer, db.ForeignKey("location.id"), nullable=False)
+    quantity = db.Column(db.Float, nullable=False)
+    price = db.Column(db.Float, nullable=False)  # price at the time of the order
+    timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+
 @app.route("/locations", methods=["GET"])
 def get_locations():
     locations = Location.query.all()
@@ -126,7 +146,7 @@ def get_inventory_by_location(location_id):
     inventory = Inventory.query.filter_by(location_id=location_id).all()
     inventory_list = []
     for item in inventory:
-        ingredient = Ingredient.query.get(item.ingredient_id)
+        ingredient = db.session.get(Ingredient, item.ingredient_id)
         inventory_list.append(
             {"ingredient_id": item.ingredient_id, "ingredient_name": ingredient.name, "quantity": item.quantity}
         )
@@ -144,17 +164,17 @@ def add_delivery():
         staff_id = int(data["staff_id"])
 
         # Check if the location exists
-        location = Location.query.get(location_id)
+        location = db.session.get(Location, location_id)
         if not location:
             raise ValueError(f"Location ID {location_id} does not exist.")
 
         # Check if the ingredient exists
-        ingredient = Ingredient.query.get(ingredient_id)
+        ingredient = db.session.get(Ingredient, ingredient_id)
         if not ingredient:
             raise ValueError(f"Ingredient ID {ingredient_id} does not exist.")
 
         # Check if the staff exists
-        staff = Staff.query.get(staff_id)
+        staff = db.session.get(Staff, staff_id)
         if not staff:
             raise ValueError(f"Staff ID {staff_id} does not exist.")
 
@@ -164,6 +184,15 @@ def add_delivery():
         else:
             new_inventory = Inventory(location_id=location_id, ingredient_id=ingredient_id, quantity=quantity)
             db.session.add(new_inventory)
+
+        new_delivery = Delivery(
+            location_id=location_id,
+            ingredient_id=ingredient_id,
+            quantity=quantity,
+            staff_id=staff_id,
+            date=datetime.utcnow(),
+        )
+        db.session.add(new_delivery)
 
         db.session.commit()
         return jsonify({"message": "Inventory updated successfully"})
@@ -175,7 +204,7 @@ def add_delivery():
 @app.route("/recipes/<int:location_id>", methods=["GET"])
 def get_recipes(location_id):
     menus = Menu.query.filter_by(location_id=location_id).all()
-    recipes = [Recipe.query.get(menu.recipe_id) for menu in menus]
+    recipes = [db.session.get(Recipe, menu.recipe_id) for menu in menus]
     recipes_data = [{"recipe_id": recipe.id, "name": recipe.name} for recipe in recipes]
     return jsonify(recipes_data)
 
@@ -188,6 +217,14 @@ def add_order():
         location_id = data["location_id"]
         quantity = float(data["quantity"])
 
+        # Check if the menu item exists and get the price
+        menu_item = Menu.query.filter_by(location_id=location_id, recipe_id=recipe_id).first()
+        if not menu_item:
+            raise ValueError(f"No menu item found for recipe_id {recipe_id} and location_id {location_id}")
+
+        price = menu_item.price
+
+        # Check if there are enough ingredients
         recipe_ingredients = RecipeIngredient.query.filter_by(recipe_id=recipe_id).all()
         insufficient_ingredients = []
 
@@ -211,17 +248,110 @@ def add_order():
         if insufficient_ingredients:
             return jsonify({"insufficient_ingredients": insufficient_ingredients}), 400
 
+        # Deduct the ingredients from the inventory
         for ingredient in recipe_ingredients:
             inventory = Inventory.query.filter_by(
                 location_id=location_id, ingredient_id=ingredient.ingredient_id
             ).first()
             inventory.quantity -= ingredient.quantity * quantity
-            db.session.commit()
+
+        # Create a new order
+        new_order = Order(recipe_id=recipe_id, location_id=location_id, quantity=quantity, price=price)
+        db.session.add(new_order)
+        db.session.commit()
 
         return jsonify({"message": "Order processed successfully"})
     except Exception as e:
         app.logger.error(f"Error in add_order: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/report/<int:location_id>/deliveries", methods=["GET"])
+def get_delivery_report(location_id):
+    report_query = (
+        db.session.query(
+            Delivery,
+            Ingredient.name.label("ingredient_name"),
+            Staff.name.label("staff_name"),
+            Location.name.label("location_name"),
+        )
+        .join(Ingredient, Delivery.ingredient_id == Ingredient.id)
+        .join(Staff, Delivery.staff_id == Staff.staff_id)
+        .join(Location, Delivery.location_id == Location.id)
+        .filter(Delivery.location_id == location_id)
+        .all()
+    )
+
+    report_data = []
+    for delivery, ingredient_name, staff_name, location_name in report_query:
+        report_data.append(
+            {
+                "ingredient_name": ingredient_name,
+                "staff_name": staff_name,
+                "quantity": delivery.quantity,
+                "cost": delivery.quantity * db.session.get(Ingredient, delivery.ingredient_id).cost_per_unit,
+                "date": delivery.date.strftime("%Y-%m-%d"),
+                "location_name": location_name,
+            }
+        )
+    return jsonify(report_data)
+
+
+@app.route("/report/<int:location_id>/revenue", methods=["GET"])
+def get_revenue_report(location_id):
+    try:
+        order_query = (
+            db.session.query(
+                Recipe.name.label("recipe_name"),
+                db.func.sum(Order.quantity).label("quantity_sold"),
+                db.func.sum(Order.quantity * Menu.price).label("total_price"),
+                db.func.group_concat(Order.timestamp, ";").label("order_times"),
+            )
+            .join(Menu, and_(Menu.recipe_id == Recipe.id, Menu.location_id == location_id))
+            .join(Order, and_(Order.recipe_id == Recipe.id, Order.location_id == location_id))
+            .group_by(Recipe.name)
+            .all()
+        )
+
+        revenue_data = [
+            {
+                "recipe_name": item.recipe_name,
+                "quantity_sold": item.quantity_sold,
+                "total_price": item.total_price,
+                "order_times": item.order_times.split(";"),
+            }
+            for item in order_query
+        ]
+
+        return jsonify(revenue_data)
+    except Exception as e:
+        app.logger.error(f"Error in get_revenue_report: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/report/<int:location_id>/inventory", methods=["GET"])
+def get_inventory_value_report(location_id):
+    inventory_query = (
+        db.session.query(
+            Inventory, Ingredient.name.label("ingredient_name"), Ingredient.cost_per_unit.label("cost_per_unit")
+        )
+        .join(Ingredient, Inventory.ingredient_id == Ingredient.id)
+        .filter(Inventory.location_id == location_id)
+        .all()
+    )
+
+    inventory_data = []
+    for inventory, ingredient_name, cost_per_unit in inventory_query:
+        inventory_data.append(
+            {
+                "ingredient_name": ingredient_name,
+                "quantity": inventory.quantity,
+                "value": inventory.quantity * cost_per_unit,
+            }
+        )
+    total_value = sum(item["value"] for item in inventory_data)
+
+    return jsonify({"total_value": total_value, "inventory_data": inventory_data})
 
 
 if __name__ == "__main__":

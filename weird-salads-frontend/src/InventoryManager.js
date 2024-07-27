@@ -5,10 +5,9 @@ import { useLocation } from './LocationContext';
 
 const InventoryManager = () => {
   const { selectedLocation } = useLocation();
-  const [locations, setLocations] = useState([]);
   const [staff, setStaff] = useState([]);
-  const [ingredients, setIngredients] = useState([]);
   const [selectedStaff, setSelectedStaff] = useState('');
+  const [ingredients, setIngredients] = useState([]);
   const [selectedIngredient, setSelectedIngredient] = useState('');
   const [quantity, setQuantity] = useState(0);
   const [inventory, setInventory] = useState([]);
@@ -18,7 +17,6 @@ const InventoryManager = () => {
     axios.get('http://localhost:5000/locations')
       .then(response => {
         const sortedLocations = response.data.sort((a, b) => a.name.localeCompare(b.name));
-        setLocations(sortedLocations);
         if (selectedLocation) {
           const selectedLoc = sortedLocations.find(loc => loc.id === parseInt(selectedLocation));
           if (selectedLoc) {
@@ -37,9 +35,17 @@ const InventoryManager = () => {
       .catch(error => {
         console.error('There was an error fetching the ingredients!', error);
       });
+  }, [selectedLocation]);
 
+  useEffect(() => {
     if (selectedLocation) {
-      fetchInventory(selectedLocation);
+      axios.get(`http://localhost:5000/inventory/${selectedLocation}`)
+        .then(response => {
+          setInventory(response.data.sort((a, b) => a.ingredient_name.localeCompare(b.ingredient_name)));
+        })
+        .catch(error => {
+          console.error('There was an error fetching the inventory!', error);
+        });
 
       axios.get(`http://localhost:5000/staff/${selectedLocation}`)
         .then(response => {
@@ -49,21 +55,10 @@ const InventoryManager = () => {
         .catch(error => {
           console.error('There was an error fetching the staff!', error);
         });
+    } else {
+      setStaff([]);
     }
   }, [selectedLocation]);
-
-  const fetchInventory = (locationId) => {
-    axios.get(`http://localhost:5000/inventory/${locationId}`)
-      .then(response => {
-        const sortedInventory = response.data
-          .filter(item => item.quantity > 0)
-          .sort((a, b) => a.ingredient_name.localeCompare(b.ingredient_name));
-        setInventory(sortedInventory);
-      })
-      .catch(error => {
-        console.error('There was an error fetching the inventory!', error);
-      });
-  };
 
   const handleAddInventory = () => {
     axios.post('http://localhost:5000/deliveries', {
@@ -75,7 +70,14 @@ const InventoryManager = () => {
       .then(response => {
         console.log('Inventory added:', response.data);
         setQuantity(0);
-        fetchInventory(selectedLocation);
+        // Refresh inventory list
+        axios.get(`http://localhost:5000/inventory/${selectedLocation}`)
+          .then(response => {
+            setInventory(response.data.sort((a, b) => a.ingredient_name.localeCompare(b.ingredient_name)));
+          })
+          .catch(error => {
+            console.error('There was an error fetching the inventory!', error);
+          });
       })
       .catch(error => {
         console.error('Error adding inventory:', error);
@@ -127,7 +129,7 @@ const InventoryManager = () => {
           </tr>
         </thead>
         <tbody>
-          {inventory.map(item => (
+          {inventory.filter(item => item.quantity > 0).map(item => (
             <tr key={item.ingredient_id}>
               <td>{item.ingredient_name}</td>
               <td>{item.quantity}</td>

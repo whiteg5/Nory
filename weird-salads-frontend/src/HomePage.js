@@ -1,72 +1,56 @@
-import axios from 'axios';
-import React, { useEffect, useState } from 'react';
-import { Button, Col, Container, Form, Row } from 'react-bootstrap';
+import React from 'react';
+import { Button, Container, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useLocation } from './LocationContext';
 
-function HomePage() {
-  const { selectedLocation, setSelectedLocation } = useLocation();
-  const [locations, setLocations] = useState([]);
+const HomePage = () => {
+  const { locations, selectedLocation, setSelectedLocation } = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    axios.get('http://localhost:5000/locations')
-      .then(response => {
-        const sortedLocations = response.data.sort((a, b) => a.name.localeCompare(b.name));
-        setLocations(sortedLocations);
-      })
-      .catch(error => {
-        console.error('There was an error fetching the locations!', error);
-      });
-  }, []);
-
-  const handleInventoryClick = () => {
+  const handleProceed = (path) => {
     if (selectedLocation) {
-      navigate('/inventory-manager');
+      navigate(path);
     } else {
-      alert('Please select a location first');
-    }
-  };
-
-  const handleSalesClick = () => {
-    if (selectedLocation) {
-      navigate('/front-of-house-sales');
-    } else {
-      alert('Please select a location first');
+      alert("Please select a location first.");
     }
   };
 
   return (
-    <Container fluid className="p-5 bg-light">
-      <Row className="justify-content-center">
-        <Col md={8} className="text-center">
-          <h1>Welcome to Weird Salads</h1>
-          <p>Select your location to proceed:</p>
-          <Form>
-            <Form.Group controlId="locationSelect">
-              <Form.Label>Select Location</Form.Label>
-              <Form.Control
-                as="select"
-                value={selectedLocation}
-                onChange={(e) => setSelectedLocation(e.target.value)}
-              >
-                <option value="">Select a location</option>
-                {locations.map(location => (
-                  <option key={location.id} value={location.id}>{location.name}</option>
-                ))}
-              </Form.Control>
-            </Form.Group>
-            <Button variant="primary" className="mt-3" onClick={handleInventoryClick}>
-              Inventory Manager
+    <Container>
+      <div className="p-5 mb-4 bg-light rounded-3">
+        <div className="container-fluid py-5">
+          <h1 className="display-5 fw-bold">Welcome to Weird Salads</h1>
+          <p className="col-md-8 fs-4">Manage your salad ingredients and orders efficiently.</p>
+          <Form.Group controlId="locationSelect">
+            <Form.Label>Select Location</Form.Label>
+            <Form.Control
+              as="select"
+              value={selectedLocation}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+            >
+              <option value="">Select a location</option>
+              {locations.sort((a, b) => a.name.localeCompare(b.name)).map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </Form.Control>
+          </Form.Group>
+          <div className="mt-3">
+            <Button variant="primary" onClick={() => handleProceed("/inventory")} className="me-2">
+              Go to Inventory Manager
             </Button>
-            <Button variant="secondary" className="mt-3 ml-3" onClick={handleSalesClick}>
-              Front of House Sales
+            <Button variant="secondary" onClick={() => handleProceed("/sales")}>
+              Go to Front of House Sales
             </Button>
-          </Form>
-        </Col>
-      </Row>
+            <Button variant="info" onClick={() => handleProceed("/reports")}>
+              Go to Reports
+            </Button>
+          </div>
+        </div>
+      </div>
     </Container>
   );
-}
+};
 
 export default HomePage;

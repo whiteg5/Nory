@@ -1,36 +1,33 @@
 import React from 'react';
 import { Container, Nav, Navbar } from 'react-bootstrap';
-import { LinkContainer } from 'react-router-bootstrap';
+import { Link, Outlet } from 'react-router-dom';
 import { useLocation } from './LocationContext';
 
-const Layout = ({ children }) => {
-  const { selectedLocation } = useLocation();
+const Layout = () => {
+  const { selectedLocation, locations } = useLocation();
+  const locationName = locations.find(loc => loc.id === parseInt(selectedLocation))?.name || "Select Location";
 
   return (
     <>
-      <Navbar bg="light" expand="lg">
+      <Navbar bg="dark" variant="dark" expand="lg">
         <Container>
-          <LinkContainer to="/">
-            <Navbar.Brand>Weird Salads</Navbar.Brand>
-          </LinkContainer>
+          <Navbar.Brand as={Link} to="/">Weird Salads</Navbar.Brand>
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="ml-auto">
-              <LinkContainer to="/">
-                <Nav.Link>Home</Nav.Link>
-              </LinkContainer>
-              <LinkContainer to="/inventory-manager">
-                <Nav.Link disabled={!selectedLocation}>Inventory Manager</Nav.Link>
-              </LinkContainer>
-              <LinkContainer to="/front-of-house-sales">
-                <Nav.Link disabled={!selectedLocation}>Front of House Sales</Nav.Link>
-              </LinkContainer>
+            <Nav className="me-auto">
+              <Nav.Link as={Link} to="/">Home</Nav.Link>
+              <Nav.Link as={Link} to="/inventory">Inventory Manager</Nav.Link>
+              <Nav.Link as={Link} to="/sales">Front of House Sales</Nav.Link>
+              <Nav.Link as={Link} to="/reports">Reports</Nav.Link>
             </Nav>
           </Navbar.Collapse>
+          <Navbar.Text>
+            Location: <strong>{locationName}</strong>
+          </Navbar.Text>
         </Container>
       </Navbar>
-      <Container className="mt-4">
-        {children}
+      <Container className="mt-3">
+        <Outlet />
       </Container>
     </>
   );

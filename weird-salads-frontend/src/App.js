@@ -5,21 +5,23 @@ import HomePage from './HomePage';
 import InventoryManager from './InventoryManager';
 import Layout from './Layout';
 import { LocationProvider } from './LocationContext';
+import Report from './Report';
 
-function App() {
+const App = () => {
   return (
     <LocationProvider>
       <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/inventory-manager" element={<InventoryManager />} />
-            <Route path="/front-of-house-sales" element={<FrontOfHouseSales />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="inventory" element={<InventoryManager />} />
+            <Route path="sales" element={<FrontOfHouseSales />} />
+            <Route path="reports" element={<Report />} />
+          </Route>
+        </Routes>
       </Router>
     </LocationProvider>
   );
-}
+};
 
 export default App;
