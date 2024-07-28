@@ -1,7 +1,5 @@
 from datetime import datetime
-
 import pandas as pd
-
 from app import (
     Ingredient,
     Inventory,
@@ -33,6 +31,7 @@ def load_data_from_excel(file_path):
             location = Location(id=row["location_id"], name=row["name"], address=row["address"])
             locations.append(location)
         db.session.bulk_save_objects(locations)
+        print(f"Loaded {len(locations)} locations")
 
         # Load Staff
         staff_data = pd.read_excel(xls, "staff")
@@ -53,6 +52,7 @@ def load_data_from_excel(file_path):
                 staff.append(staff_member)
                 staff_ids.add(row["staff_id"])
         db.session.bulk_save_objects(staff)
+        print(f"Loaded {len(staff)} staff members")
 
         # Load StaffLocation
         staff_location_data = pd.read_excel(xls, "staff")
@@ -62,6 +62,7 @@ def load_data_from_excel(file_path):
             staff_location = StaffLocation(staff_id=row["staff_id"], location_id=row["location_id"])
             staff_locations.append(staff_location)
         db.session.bulk_save_objects(staff_locations)
+        print(f"Loaded {len(staff_locations)} staff locations")
 
         # Load Ingredients
         ingredient_data = pd.read_excel(xls, "ingredients")
@@ -73,6 +74,7 @@ def load_data_from_excel(file_path):
             )
             ingredients.append(ingredient)
         db.session.bulk_save_objects(ingredients)
+        print(f"Loaded {len(ingredients)} ingredients")
 
         # Set Inventory for all ingredients in all locations to 0
         inventory = []
@@ -81,6 +83,7 @@ def load_data_from_excel(file_path):
                 inventory_item = Inventory(location_id=location.id, ingredient_id=ingredient.id, quantity=0)
                 inventory.append(inventory_item)
         db.session.bulk_save_objects(inventory)
+        print(f"Initialized inventory for all ingredients in all locations")
 
         # Load Recipes and Recipe Ingredients
         recipe_data = pd.read_excel(xls, "recipes")
@@ -93,6 +96,7 @@ def load_data_from_excel(file_path):
             recipe = Recipe(id=row["recipe_id"], name=row["name"])
             recipes.append(recipe)
         db.session.bulk_save_objects(recipes)
+        print(f"Loaded {len(recipes)} recipes")
 
         # Load Recipe Ingredients from the same sheet
         recipe_ingredients = []
@@ -102,6 +106,7 @@ def load_data_from_excel(file_path):
             )
             recipe_ingredients.append(recipe_ingredient)
         db.session.bulk_save_objects(recipe_ingredients)
+        print(f"Loaded {len(recipe_ingredients)} recipe ingredients")
 
         # Load Modifiers
         modifier_data = pd.read_excel(xls, "modifiers")
@@ -114,6 +119,7 @@ def load_data_from_excel(file_path):
             )
             modifiers.append(modifier)
         db.session.bulk_save_objects(modifiers)
+        print(f"Loaded {len(modifiers)} modifiers")
 
         # Load Menus
         menu_data = pd.read_excel(xls, "menus")
@@ -129,6 +135,7 @@ def load_data_from_excel(file_path):
             )
             menus.append(menu)
         db.session.bulk_save_objects(menus)
+        print(f"Loaded {len(menus)} menu items")
 
         db.session.commit()
 

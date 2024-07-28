@@ -14,8 +14,17 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///nory.db"
 db = SQLAlchemy(app)
 
-# Enable CORS for all routes
+# Enable CORS for all routes and origins
 CORS(app)
+
+
+# Add CORS headers after each request
+@app.after_request
+def after_request(response):
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
+    return response
 
 
 class Staff(db.Model):
@@ -146,7 +155,7 @@ def get_inventory_by_location(location_id):
     inventory = Inventory.query.filter_by(location_id=location_id).all()
     inventory_list = []
     for item in inventory:
-        ingredient = db.session.get(Ingredient, item.ingredient_id)
+        ingredient = Ingredient.query.get(item.ingredient_id)
         inventory_list.append(
             {"ingredient_id": item.ingredient_id, "ingredient_name": ingredient.name, "quantity": item.quantity}
         )
@@ -164,17 +173,17 @@ def add_delivery():
         staff_id = int(data["staff_id"])
 
         # Check if the location exists
-        location = db.session.get(Location, location_id)
+        location = Location.query.get(location_id)
         if not location:
             raise ValueError(f"Location ID {location_id} does not exist.")
 
         # Check if the ingredient exists
-        ingredient = db.session.get(Ingredient, ingredient_id)
+        ingredient = Ingredient.query.get(ingredient_id)
         if not ingredient:
             raise ValueError(f"Ingredient ID {ingredient_id} does not exist.")
 
         # Check if the staff exists
-        staff = db.session.get(Staff, staff_id)
+        staff = Staff.query.get(staff_id)
         if not staff:
             raise ValueError(f"Staff ID {staff_id} does not exist.")
 
@@ -204,7 +213,7 @@ def add_delivery():
 @app.route("/recipes/<int:location_id>", methods=["GET"])
 def get_recipes(location_id):
     menus = Menu.query.filter_by(location_id=location_id).all()
-    recipes = [db.session.get(Recipe, menu.recipe_id) for menu in menus]
+    recipes = [Recipe.query.get(menu.recipe_id) for menu in menus]
     recipes_data = [{"recipe_id": recipe.id, "name": recipe.name} for recipe in recipes]
     return jsonify(recipes_data)
 
@@ -289,7 +298,7 @@ def get_delivery_report(location_id):
                 "ingredient_name": ingredient_name,
                 "staff_name": staff_name,
                 "quantity": delivery.quantity,
-                "cost": delivery.quantity * db.session.get(Ingredient, delivery.ingredient_id).cost_per_unit,
+                "cost": delivery.quantity * Ingredient.query.get(delivery.ingredient_id).cost_per_unit,
                 "date": delivery.date.strftime("%Y-%m-%d"),
                 "location_name": location_name,
             }

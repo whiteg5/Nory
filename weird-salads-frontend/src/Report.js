@@ -11,7 +11,7 @@ const Report = () => {
 
   useEffect(() => {
     if (selectedLocation) {
-      axios.get(`http://localhost:5000/report/${selectedLocation}/${reportType}`)
+      axios.get(`http://127.0.0.1:5000/report/${selectedLocation}/${reportType}`)
         .then(response => {
           console.log('Report data:', response.data);
           setReportData(response.data);

@@ -13,7 +13,7 @@ const FrontOfHouseSales = () => {
   const [locationName, setLocationName] = useState('');
 
   useEffect(() => {
-    axios.get('http://localhost:5000/locations')
+    axios.get('http://127.0.0.1:5000/locations')
       .then(response => {
         const sortedLocations = response.data.sort((a, b) => a.name.localeCompare(b.name));
         if (selectedLocation) {
@@ -30,7 +30,7 @@ const FrontOfHouseSales = () => {
 
   useEffect(() => {
     if (selectedLocation) {
-      axios.get(`http://localhost:5000/recipes/${selectedLocation}`)
+      axios.get(`http://127.0.0.1:5000/recipes/${selectedLocation}`)
         .then(response => {
           setRecipes(response.data.sort((a, b) => a.name.localeCompare(b.name)));
         })
@@ -44,7 +44,7 @@ const FrontOfHouseSales = () => {
   }, [selectedLocation]);
 
   const handleOrder = () => {
-    axios.post('http://localhost:5000/orders', {
+    axios.post('http://127.0.0.1:5000/orders', {
       recipe_id: selectedRecipe,
       location_id: selectedLocation,
       quantity: quantity

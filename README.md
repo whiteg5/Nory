@@ -18,20 +18,15 @@ This project is an inventory and sales management system for a restaurant. It in
     cd nory-inventory-management
     ```
 
-2. **Set up a virtual environment:**
+2. **Set up a virtual environment with Pipenv:**
 
     ```sh
-    python -m venv venv
-    source venv/bin/activate # On Windows use `venv\Scripts\activate`
+    pip install pipenv
+    pipenv install
+    pipenv shell
     ```
 
-3. **Install Python dependencies:**
-
-    ```sh
-    pip install -r requirements.txt
-    ```
-
-4. **Run the Flask app:**
+3. **Run the Flask app:**
 
     ```sh
     python app.py
@@ -39,7 +34,7 @@ This project is an inventory and sales management system for a restaurant. It in
 
     This will start the Flask server on `http://127.0.0.1:5000`.
 
-5. **Load initial data from Excel:**
+4. **Load initial data from Excel:**
 
     Ensure your Excel file (`Weird Salads - Data Export.xlsx`) is placed in the `data` directory. Then run:
 

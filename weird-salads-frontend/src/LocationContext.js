@@ -12,7 +12,7 @@ export const LocationProvider = ({ children }) => {
   const [selectedLocation, setSelectedLocation] = useState('');
 
   useEffect(() => {
-    axios.get('http://localhost:5000/locations')
+    axios.get('http://127.0.0.1:5000/locations')
       .then(response => {
         setLocations(response.data);
       })

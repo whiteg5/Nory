@@ -14,7 +14,7 @@ const InventoryManager = () => {
   const [locationName, setLocationName] = useState('');
 
   useEffect(() => {
-    axios.get('http://localhost:5000/locations')
+    axios.get('http://127.0.0.1:5000/locations')
       .then(response => {
         const sortedLocations = response.data.sort((a, b) => a.name.localeCompare(b.name));
         if (selectedLocation) {
@@ -28,7 +28,7 @@ const InventoryManager = () => {
         console.error('There was an error fetching the locations!', error);
       });
 
-    axios.get('http://localhost:5000/ingredients')
+    axios.get('http://127.0.0.1:5000/ingredients')
       .then(response => {
         setIngredients(response.data);
       })
@@ -39,7 +39,7 @@ const InventoryManager = () => {
 
   useEffect(() => {
     if (selectedLocation) {
-      axios.get(`http://localhost:5000/inventory/${selectedLocation}`)
+      axios.get(`http://127.0.0.1:5000/inventory/${selectedLocation}`)
         .then(response => {
           setInventory(response.data.sort((a, b) => a.ingredient_name.localeCompare(b.ingredient_name)));
         })
@@ -47,7 +47,7 @@ const InventoryManager = () => {
           console.error('There was an error fetching the inventory!', error);
         });
 
-      axios.get(`http://localhost:5000/staff/${selectedLocation}`)
+      axios.get(`http://127.0.0.1:5000/staff/${selectedLocation}`)
         .then(response => {
           setStaff(response.data);
           console.log('Staff fetched:', response.data);
@@ -61,7 +61,7 @@ const InventoryManager = () => {
   }, [selectedLocation]);
 
   const handleAddInventory = () => {
-    axios.post('http://localhost:5000/deliveries', {
+    axios.post('http://127.0.0.1:5000/deliveries', {
       location_id: selectedLocation,
       ingredient_id: selectedIngredient,
       quantity,
@@ -71,7 +71,7 @@ const InventoryManager = () => {
         console.log('Inventory added:', response.data);
         setQuantity(0);
         // Refresh inventory list
-        axios.get(`http://localhost:5000/inventory/${selectedLocation}`)
+        axios.get(`http://127.0.0.1:5000/inventory/${selectedLocation}`)
           .then(response => {
             setInventory(response.data.sort((a, b) => a.ingredient_name.localeCompare(b.ingredient_name)));
           })
