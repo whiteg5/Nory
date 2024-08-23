@@ -2,9 +2,24 @@
 
 ## Problem Statement
 
-Staffing costs are the largest variable expense for a restaurant, typically accounting for 30-40% of revenue. Properly deployed staffing should enhance service and throughput, while improper staffing—whether overstaffing or understaffing—can harm profitability and customer experience.
+Staffing costs are the largest variable cost for a restaurant business. Usually in the region of 30-40% of revenue. 
 
-Restaurant teams create schedules weekly, often without the tools or data to accurately forecast demand or determine optimal staffing levels. Nory aims to solve this by providing data-driven staffing recommendations to increase productivity, measured by Orders per Labour Hour (OPLH) and Sales per Labour Hour (SPLH).
+Deployed effectively staffing should be an asset to delivery great, efficient service and have a high throughput. Deployed in-effectively over staffing can drive a business into negative profitability and understaffing can drastically impact guest experience and staff morale.
+
+Front line restaurant teams create weekly/daily schedules which determine what staff should work when in a week. Ideally this should be based on the expected demand of each day and each hour/30 min slot within a day. 
+
+Unfortunately these teams don’t have the tools or the technical proficiency to (a) accurate determine their predicted revenue/order demand and (b) map the expected demand to an optimal number of staff per department. 
+
+This is where Nory comes in - we want to suggest the optimal number of staff for a given level of expected demand - our objective is to make staffing data based and to increase productivity for our customers. For reference we measure productivity using 2 metrics - Orders per labour hour (OPLH) and Sales per labour hour (SPLH). 
+
+A successful outcome will not only save restaurant team’s time but increase these metrics.
+
+Challenge:
+Using the input data provided, please:
+
+1. Create a demand forecasting model to predict hourly order data for the week after the data set finishes (i.e. 1st week of July - 1-7th (Mon to Sunday))
+2. Backtest the data to determine the optimal level of staff per hour for a given level of orders 
+3. Use your demand forecasting model and optimal staffing data to recommend / create a staff schedule for the week 1-7th of July
 
 ## Challenge
 
