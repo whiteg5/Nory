@@ -6,6 +6,12 @@
 .pnp.js
 /__pycache__
 
+# Ignore CatBoost info directory
+catboost_info/
+
+# Ignore Lightning logs directory
+lightning_logs/
+
 # testing
 /coverage
 

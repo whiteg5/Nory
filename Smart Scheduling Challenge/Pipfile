@@ -1,0 +1,30 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pandas = "*"
+matplotlib = "*"
+openpyxl = "*"
+prophet = "*"
+setuptools = "*"
+pipenv = "*"
+numpy = "==1.23.5"
+scikit-learn = "*"
+xgboost = "*"
+optuna = "*"
+stumpy = "*"
+neuralprophet = "*"
+lightgbm = "*"
+catboost = "*"
+keras = "*"
+pybats = "*"
+pyesn = "*"
+reservoirpy = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
+python_full_version = "3.10.3"
